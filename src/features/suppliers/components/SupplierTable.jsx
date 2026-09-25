@@ -14,7 +14,6 @@ import {
   Calendar,
 } from 'lucide-react';
 
-// Formateador de moneda en formato contabilidad USD: $ 1,500,000.00
 const formatCurrency = (amount) => {
   if (amount === undefined || amount === null || isNaN(amount)) return '$ 0.00';
   return new Intl.NumberFormat('en-US', {
@@ -25,7 +24,6 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-// Formateador de fecha y hora legible
 const formatDateTime = (dateString) => {
   if (!dateString) return '-';
   try {
@@ -164,14 +162,12 @@ export const SupplierTable = ({
                   )}
                 </td>
 
-                {/* Identificación Tributaria (11 dígitos) */}
                 <td className="cell-tax-id">
                   <span className="tax-id-badge" title="Identificación Tributaria de 11 dígitos">
                     {supplier.taxId}
                   </span>
                 </td>
 
-                {/* Contacto: Teléfono y Correo */}
                 <td className="cell-contact">
                   <div className="contact-item">
                     <Phone size={13} className="contact-icon" />
@@ -185,7 +181,6 @@ export const SupplierTable = ({
                   </div>
                 </td>
 
-                {/* Sitio Web con enlace y redirección */}
                 <td className="cell-website">
                   {supplier.website ? (
                     <a
@@ -204,7 +199,6 @@ export const SupplierTable = ({
                   )}
                 </td>
 
-                {/* Dirección Física y País */}
                 <td className="cell-location">
                   <div className="country-badge">{supplier.country}</div>
                   <div className="physical-address" title={supplier.physicalAddress}>
@@ -212,14 +206,12 @@ export const SupplierTable = ({
                   </div>
                 </td>
 
-                {/* Facturación Anual en formato contabilidad */}
                 <td className="cell-revenue text-right">
                   <span className="revenue-amount">
                     {formatCurrency(supplier.annualRevenue)}
                   </span>
                 </td>
 
-                {/* Fecha de última edición */}
                 <td className="cell-date">
                   <div className="date-display">
                     <Calendar size={13} className="date-icon" />
@@ -227,10 +219,8 @@ export const SupplierTable = ({
                   </div>
                 </td>
 
-                {/* Opciones por proveedor: Ver, Editar, Eliminar y Screening */}
                 <td className="cell-actions text-center">
                   <div className="actions-cluster">
-                    {/* Screening (Destacado para Cruce de Listas de Alto Riesgo) */}
                     <button
                       type="button"
                       className="btn-screening"

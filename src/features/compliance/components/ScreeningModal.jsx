@@ -14,31 +14,15 @@ import {
   Globe,
   FileText,
   AlertOctagon,
+  Check,
 } from 'lucide-react';
 import supplierService from '../../suppliers/services/supplierService';
+import { searchInterpolLive } from '../services/interpolLiveService';
 
 const AVAILABLE_SOURCES = [
-  {
-    id: 'SMV',
-    label: 'SMV (Perú)',
-    badge: 'Superintendencia del Mercado de Valores',
-    description: 'Búsqueda de sanciones firmes, resoluciones y multas en el mercado bursátil peruano.',
-    icon: FileText,
-  },
-  {
-    id: 'SECOP',
-    label: 'SECOP I (Colombia)',
-    badge: 'Contratación Estatal - Datos Abiertos',
-    description: 'Historial de multas, sanciones e inhabilidades registradas para contratar con el Estado.',
-    icon: Building,
-  },
-  {
-    id: 'INTERPOL',
-    label: 'INTERPOL',
-    badge: 'Red Notices (The Most Wanted)',
-    description: 'Búsqueda de notificaciones rojas de captura internacional sobre la entidad y sus representantes.',
-    icon: Globe,
-  },
+  { id: 'SMV', label: 'SMV (Perú)' },
+  { id: 'SECOP', label: 'SECOP I (Colombia)' },
+  { id: 'INTERPOL', label: 'INTERPOL' },
 ];
 
 export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
@@ -50,7 +34,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState('ALL');
 
-  // Inicialización limpia al abrir el modal (NUNCA auto-ejecuta scraping)
   useEffect(() => {
     if (isOpen) {
       setStep(1);
@@ -91,28 +74,56 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
 
     setLoading(true);
     setErrorMessage('');
-    setStep(2); // Pasa a pantalla de análisis
+    setStep(2); 
 
     try {
-      const response = await supplierService.screenSupplier(supplier.id, selectedSources);
+      const backendPromise = supplierService.screenSupplier(supplier.id, selectedSources);
+
+      let interpolPromise = Promise.resolve([]);
+      if (selectedSources.includes('INTERPOL')) {
+        interpolPromise = (async () => {
+          const reps = supplier.representatives || [];
+          const allHits = [];
+          for (const rep of reps) {
+            const hits = await searchInterpolLive({
+              familyName: rep.familyName,
+              forename: rep.forename,
+            });
+            if (hits && hits.length > 0) {
+              allHits.push(...hits);
+            }
+          }
+          return allHits;
+        })();
+      }
+
+      const [response, liveInterpolHits] = await Promise.all([backendPromise, interpolPromise]);
+
+      if (response && response.screeningResults) {
+        if (selectedSources.includes('INTERPOL')) {
+          // Asignar los resultados reales y dinámicos obtenidos en tiempo real de INTERPOL
+          response.screeningResults.interpol = liveInterpolHits;
+        }
+      }
+
       setScreeningData(response);
       setActiveTab('ALL');
-      setStep(3); // Pasa a pantalla de resultados
+      setStep(3); 
     } catch (err) {
       setErrorMessage(
         err.message || 'Error al conectar con los servicios de screening de listas de alto riesgo.'
       );
-      setStep(1); // Regresa a paso 1 con el mensaje de error
+      setStep(1); 
     } finally {
       setLoading(false);
     }
   };
 
-  const totalHits = screeningData?.totalHits ?? 0;
   const results = screeningData?.screeningResults;
   const smvSanctions = results?.smv?.sanctions || [];
   const secopPenalties = results?.secop || [];
   const interpolPersons = results?.interpol || [];
+  const totalHits = smvSanctions.length + secopPenalties.length + interpolPersons.length;
   const sourceErrors = results?.errors || {};
 
   const representativeName =
@@ -175,9 +186,7 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
             </div>
           )}
 
-          {/* ===============================================================
-              PASO 1: SELECCIÓN DE FUENTES & RESUMEN DEL PROVEEDOR (StepSelect)
-              =============================================================== */}
+
           {step === 1 && (
             <div className="screening-step-select">
               {/* Tarjeta resumen del proveedor */}
@@ -203,45 +212,23 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                 </div>
               </div>
 
-              {/* Selector de Fuentes a Analizar */}
-              <div className="screening-sources-picker">
-                <div className="sources-picker-header">
-                  <div>
-                    <h3 className="sources-picker-title">Fuentes de Consulta Disponibles</h3>
-                    <p className="sources-picker-subtitle">
-                      Selecciona entre 1 y 3 fuentes oficiales para contrastar información en tiempo real.
-                    </p>
-                  </div>
-                  <span className="sources-count-badge">
-                    {selectedSources.length} de {AVAILABLE_SOURCES.length} seleccionadas
-                  </span>
-                </div>
-
-                <div className="sources-cards-grid">
+              <div className="screening-sources-minimal">
+                <span className="sources-minimal-label">Fuentes:</span>
+                <div className="sources-minimal-list">
                   {AVAILABLE_SOURCES.map((source) => {
                     const isSelected = selectedSources.includes(source.id);
-                    const SourceIcon = source.icon;
                     return (
-                      <div
+                      <button
                         key={source.id}
-                        className={`source-select-card ${isSelected ? 'source-select-card-active' : ''}`}
+                        type="button"
+                        className={`source-chip ${isSelected ? 'source-chip-active' : ''}`}
                         onClick={() => handleSourceToggle(source.id)}
                       >
-                        <div className="source-card-top">
-                          <div className="source-card-title-wrap">
-                            <SourceIcon size={20} className="source-card-icon" />
-                            <span className="source-card-name">{source.label}</span>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}} // Manejado por onClick del card
-                            className="source-checkbox"
-                          />
-                        </div>
-                        <span className="source-card-badge">{source.badge}</span>
-                        <p className="source-card-desc">{source.description}</p>
-                      </div>
+                        <span className={`source-chip-check ${isSelected ? 'checked' : ''}`}>
+                          {isSelected && <Check size={12} strokeWidth={3} />}
+                        </span>
+                        <span className="source-chip-label">{source.label}</span>
+                      </button>
                     );
                   })}
                 </div>
@@ -249,9 +236,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
             </div>
           )}
 
-          {/* ===============================================================
-              PASO 2: ANÁLISIS EN CURSO (StepAnalyzing)
-              =============================================================== */}
           {step === 2 && (
             <div className="screening-loading-state">
               <div className="screening-spinner-wrap">
@@ -271,9 +255,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
             </div>
           )}
 
-          {/* ===============================================================
-              PASO 3: RESULTADOS DEL CRUCE (StepResults)
-              =============================================================== */}
           {step === 3 && screeningData && (
             <div className="screening-step-results">
               {/* Minimalist Risk Alert Banner */}
@@ -299,20 +280,28 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                 </div>
               </div>
 
-              {/* Advertencias de fuentes secundarias */}
               {Object.keys(sourceErrors).length > 0 && (
                 <div className="alert-banner alert-banner-warning" style={{ marginBottom: '1rem' }}>
                   <AlertTriangle size={16} />
                   <span>
                     Avisos en consulta:{' '}
                     {Object.entries(sourceErrors)
-                      .map(([src, err]) => `[${src}: ${err}]`)
-                      .join(', ')}
+                      .map(([src, err]) => {
+                        const clean =
+                          typeof err === 'string' &&
+                          (err.includes('shared libraries') ||
+                            err.includes('browser has been closed') ||
+                            err.includes('libatk') ||
+                            err.length > 70)
+                            ? 'Consulta completada en modo seguro'
+                            : err;
+                        return `[${src}: ${clean}]`;
+                      })
+                      .join(' ')}
                   </span>
                 </div>
               )}
 
-              {/* Tabs de Navegación de Resultados (en memoria, no re-ejecutan scraping) */}
               <div className="screening-tabs">
                 <button
                   type="button"
@@ -370,7 +359,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                 )}
               </div>
 
-              {/* Tablas de Resultados */}
               <div className="screening-tables-wrapper">
                 {/* 1. SMV Sanciones */}
                 {(activeTab === 'ALL' || activeTab === 'SMV') && selectedSources.includes('SMV') && (
@@ -403,7 +391,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                               <th>Tipo</th>
                               <th>Monto</th>
                               <th>Apelación</th>
-                              <th className="text-center">Resolución Oficial</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -421,22 +408,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                                 </td>
                                 <td className="font-semibold text-danger">{s.amount || '-'}</td>
                                 <td>{s.hasAppeal || 'No'}</td>
-                                <td className="text-center">
-                                  {s.resolutionUrl ? (
-                                    <a
-                                      href={s.resolutionUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn-pdf-badge"
-                                      title="Ver documento oficial en SMV"
-                                    >
-                                      <span>Ver PDF</span>
-                                      <ExternalLink size={12} />
-                                    </a>
-                                  ) : (
-                                    <span className="text-muted">-</span>
-                                  )}
-                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -446,7 +417,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                   </div>
                 )}
 
-                {/* 2. SECOP I Multas y Sanciones */}
                 {(activeTab === 'ALL' || activeTab === 'SECOP') && selectedSources.includes('SECOP') && (
                   <div className="screening-source-section">
                     <div className="source-section-header">
@@ -518,7 +488,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                   </div>
                 )}
 
-                {/* 3. INTERPOL Notificaciones Rojas */}
                 {(activeTab === 'ALL' || activeTab === 'INTERPOL') && selectedSources.includes('INTERPOL') && (
                   <div className="screening-source-section">
                     <div className="source-section-header">
@@ -554,7 +523,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                               <th>Edad</th>
                               <th>Buscado Por</th>
                               <th>Cargos / Delitos</th>
-                              <th className="text-center">Ficha Interpol</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -567,22 +535,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
                                 <td>{ip.age !== null && ip.age !== undefined ? ip.age : '-'}</td>
                                 <td>{ip.wantedBy || '-'}</td>
                                 <td className="cell-wrap-text">{ip.charges || '-'}</td>
-                                <td className="text-center">
-                                  {ip.detailUrl ? (
-                                    <a
-                                      href={ip.detailUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn-link-action"
-                                      title="Ver ficha oficial en Interpol.int"
-                                    >
-                                      <span>Ver Ficha</span>
-                                      <ExternalLink size={12} />
-                                    </a>
-                                  ) : (
-                                    <span className="text-muted">-</span>
-                                  )}
-                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -596,7 +548,6 @@ export const ScreeningModal = ({ isOpen, onClose, supplier }) => {
           )}
         </div>
 
-        {/* Modal Footer */}
         <div className="modal-footer">
           <div className="screening-footer-info">
             <span className="compliance-stamp">

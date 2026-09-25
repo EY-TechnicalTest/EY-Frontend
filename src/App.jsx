@@ -11,16 +11,13 @@ function AppContent() {
   const [toasts, setToasts] = useState([]);
   const [supplierCount, setSupplierCount] = useState(0);
 
-  // addToast memorizado para evitar re-render loops y duplicación de popups
   const addToast = useCallback((type, message, title = '') => {
     setToasts((prev) => {
-      // Evitar spamear el mismo mensaje repetido en pantalla
       const alreadyVisible = prev.some((t) => t.message === message);
       if (alreadyVisible) return prev;
 
       const id = Date.now() + Math.random().toString(36).substring(2, 7);
       const next = [...prev, { id, type, message, title }];
-      // Máximo 3 notificaciones visibles simultáneas
       return next.slice(-3);
     });
   }, []);
@@ -33,7 +30,6 @@ function AppContent() {
     setSupplierCount(count);
   }, []);
 
-  // 1. Pantalla propia de Login si el usuario NO está autenticado
   if (!isAuthenticated) {
     return (
       <div className="ey-app-wrapper">
@@ -45,10 +41,8 @@ function AppContent() {
     );
   }
 
-  // 2. Pantalla principal (Dashboard y datos de proveedores) una vez autenticado
   return (
     <div className="ey-app-wrapper">
-      {/* Notificaciones del Sistema (con límite y deduplicación) */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       {/* Encabezado Corporativo EY */}

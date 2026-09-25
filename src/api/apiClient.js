@@ -1,9 +1,10 @@
-// Cliente HTTP centralizado para la comunicación con el backend REST de EY (.NET Core)
-const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5261';
+const DEFAULT_API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  'https://ey-backend-fabiola-ceb2cafgcxcxg0eh.canadacentral-01.azurewebsites.net';
 
 class ApiClient {
   constructor(baseUrl = DEFAULT_API_BASE_URL) {
-    this.baseUrl = baseUrl.replace(/\/+$/, '');
+    this.baseUrl = baseUrl.replace(/\/index\.html\/?$/i, '').replace(/\/+$/, '');
     this.onRateLimitCallback = null;
     this.onUnauthorizedCallback = null;
     this.lastRateLimitNoticeTime = 0;
@@ -56,7 +57,7 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
-      // Manejo de Rate Limit (HTTP 429) - 20 llamadas por minuto
+      // 20 llamadas por minuto
       if (response.status === 429) {
         let errorData = {};
         try {
@@ -68,7 +69,6 @@ class ApiClient {
         }
 
         const now = Date.now();
-        // Throttle para evitar saturar la interfaz con notificaciones repetidas
         if (this.onRateLimitCallback && now - this.lastRateLimitNoticeTime > 8000) {
           this.lastRateLimitNoticeTime = now;
           this.onRateLimitCallback(errorData.message || 'Límite de 20 llamadas por minuto excedido.');
@@ -80,7 +80,6 @@ class ApiClient {
         throw error;
       }
 
-      // Manejo de No Autorizado (HTTP 401)
       if (response.status === 401) {
         const now = Date.now();
         if (this.onUnauthorizedCallback && now - this.lastUnauthorizedNoticeTime > 8000) {
@@ -92,7 +91,6 @@ class ApiClient {
         throw error;
       }
 
-      // No Content
       if (response.status === 204) {
         return null;
       }

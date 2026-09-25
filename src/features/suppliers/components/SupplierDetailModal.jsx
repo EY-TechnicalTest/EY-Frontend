@@ -107,7 +107,6 @@ export const SupplierDetailModal = ({ isOpen, onClose, supplier, onEdit, onScree
             </div>
           </div>
 
-          {/* Grid information */}
           <div className="detail-grid">
             <div className="detail-info-block">
               <span className="detail-label">Nombre Comercial</span>
@@ -170,7 +169,6 @@ export const SupplierDetailModal = ({ isOpen, onClose, supplier, onEdit, onScree
             </div>
           </div>
 
-          {/* Representantes Legales */}
           <div className="detail-representatives-section">
             <div className="section-header-compact">
               <Users size={16} className="text-ey-yellow" />
@@ -210,7 +208,6 @@ export const SupplierDetailModal = ({ isOpen, onClose, supplier, onEdit, onScree
           </div>
         </div>
 
-        {/* Footer */}
         <div className="modal-footer">
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Cerrar

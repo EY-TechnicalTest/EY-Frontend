@@ -21,10 +21,8 @@ export const Navbar = ({ totalSuppliers, onOpenLoginModal }) => {
           </div>
         </div>
 
-        {/* Status Indicators & Session */}
         <div className="ey-navbar-actions">
 
-          {/* User / Authentication Status */}
           {isAuthenticated ? (
             <div className="user-profile-badge">
               <div className="user-avatar" title="Oficial de Cumplimiento">

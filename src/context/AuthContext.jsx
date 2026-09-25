@@ -6,6 +6,7 @@ import apiClient from '../api/apiClient';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  // Mantiene la sesión activa si el token es válido al refrescar la página
   const [user, setUser] = useState(() => authService.getCurrentUser());
   const [token, setToken] = useState(() => authService.getToken());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -33,7 +34,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [login]);
 
-  // Configuración de listeners globales de la API (solo una vez al montar)
   useEffect(() => {
     apiClient.setRateLimitListener((msg) => {
       setRateLimitMessage(msg);

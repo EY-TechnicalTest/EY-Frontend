@@ -23,23 +23,18 @@ import { useAuth } from '../context/AuthContext';
 export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
   const { isAuthenticated, rateLimitMessage, clearRateLimitMessage } = useAuth();
 
-  // Estado del inventario
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
 
-  // Filtros y ordenamiento
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('ALL');
-  // Requisito del enunciado: Ordenados por fecha de última edición descendente
   const [sortField, setSortField] = useState('lastEditedAt');
   const [sortDirection, setSortDirection] = useState('desc');
 
-  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Estados de modales
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +49,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
   const [isScreeningOpen, setIsScreeningOpen] = useState(false);
 
   const loadSuppliers = useCallback(async () => {
-    // Si no está autenticado, no consumir el endpoint para evitar errores 401 innecesarios
     if (!isAuthenticated) {
       setSuppliers([]);
       setLoading(false);
@@ -74,11 +68,9 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
       }
     } catch (err) {
       if (err.status === 401) {
-        // La sesión no es válida o expiró; se limpia el listado silenciosamente
         setSuppliers([]);
         if (onSuppliersCountChange) onSuppliersCountChange(0);
       } else if (err.status === 429) {
-        // Rate limit capturado (el banner de rate limit ya lo muestra)
         console.warn('Límite de 20 llamadas por minuto alcanzado.');
       } else {
         setConnectionError(err.message || 'Error de conexión con el backend .NET');
@@ -88,7 +80,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     }
   }, [isAuthenticated, onSuppliersCountChange]);
 
-  // Cargar inventario SOLO cuando el usuario está autenticado
   useEffect(() => {
     if (isAuthenticated) {
       loadSuppliers();
@@ -104,11 +95,9 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     setIsSaving(true);
     try {
       if (selectedSupplier) {
-        // Actualizar
         await supplierService.updateSupplier(selectedSupplier.id, payload);
         addToast('success', `Proveedor '${payload.legalName}' actualizado exitosamente.`, 'Operación Exitosa');
       } else {
-        // Crear
         const created = await supplierService.createSupplier(payload);
         addToast('success', `Proveedor '${payload.legalName}' registrado exitosamente con ID #${created.id}.`, 'Proveedor Registrado');
       }
@@ -122,7 +111,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     }
   };
 
-  // Eliminar proveedor
   const handleConfirmDelete = async (id) => {
     setIsDeleting(true);
     try {
@@ -137,7 +125,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     }
   };
 
-  // Manejadores de modales
   const handleOpenCreate = () => {
     setSelectedSupplier(null);
     setIsModalOpen(true);
@@ -162,7 +149,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     setIsScreeningOpen(true);
   };
 
-  // Ordenamiento interactivo por columnas
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -173,17 +159,14 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     setCurrentPage(1);
   };
 
-  // Lista de países únicos para el filtro
   const uniqueCountries = useMemo(() => {
     const countries = new Set(suppliers.map((s) => s.country).filter(Boolean));
     return Array.from(countries).sort();
   }, [suppliers]);
 
-  // Filtrado y ordenamiento de proveedores en memoria
   const filteredAndSortedSuppliers = useMemo(() => {
     let result = [...suppliers];
 
-    // Filtro por término de búsqueda (Razón Social, Nombre Comercial, TaxId)
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       result = result.filter(
@@ -201,12 +184,10 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
       );
     }
 
-    // Filtro por país
     if (countryFilter !== 'ALL') {
       result = result.filter((s) => s.country === countryFilter);
     }
 
-    // Ordenamiento
     result.sort((a, b) => {
       let valA = a[sortField];
       let valB = b[sortField];
@@ -233,7 +214,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     return result;
   }, [suppliers, searchTerm, countryFilter, sortField, sortDirection]);
 
-  // Paginación
   const totalItems = filteredAndSortedSuppliers.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
   const paginatedSuppliers = useMemo(() => {
@@ -241,7 +221,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
     return filteredAndSortedSuppliers.slice(start, start + pageSize);
   }, [filteredAndSortedSuppliers, currentPage, pageSize]);
 
-  // Cálculos para tarjetas métricas
   const totalAnnualVolume = useMemo(() => {
     return suppliers.reduce((acc, curr) => acc + (Number(curr.annualRevenue) || 0), 0);
   }, [suppliers]);
@@ -255,7 +234,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
 
   return (
     <div className="ey-dashboard-layout">
-      {/* Banner de Rate Limit si se excede el límite de 20 llamadas/min */}
       {rateLimitMessage && (
         <div className="rate-limit-banner">
           <div className="rate-limit-banner-content">
@@ -276,7 +254,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
         </div>
       )}
 
-      {/* Banner de Error de Conexión si el backend está inaccesible */}
       {connectionError && (
         <div className="alert-banner alert-banner-danger">
           <AlertTriangle size={20} />
@@ -288,9 +265,7 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
       )}
 
 
-      {/* Main Content Card: Inventory & Screening Management */}
       <div className="dashboard-main-card">
-        {/* Card Header & Controls Toolbar */}
         <div className="dashboard-toolbar">
           <div className="toolbar-left">
             <h2 className="section-title">Inventario de Proveedores</h2>
@@ -300,7 +275,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
           </div>
 
           <div className="toolbar-right">
-            {/* Search Input */}
             <div className="search-input-wrap">
               <Search size={16} className="search-icon" />
               <input
@@ -326,7 +300,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
               )}
             </div>
 
-            {/* Country Filter */}
             <div className="country-filter-wrap">
               <Filter size={16} className="filter-icon" />
               <select
@@ -348,7 +321,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
               </select>
             </div>
 
-            {/* Refresh Button */}
             <button
               type="button"
               className="btn btn-secondary btn-icon"
@@ -360,7 +332,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
               <span>Actualizar</span>
             </button>
 
-            {/* Add New Supplier Button */}
             <button
               type="button"
               className="btn btn-primary"
@@ -372,7 +343,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
           </div>
         </div>
 
-        {/* Table Component */}
         <SupplierTable
           suppliers={paginatedSuppliers}
           sortField={sortField}
@@ -385,7 +355,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
           loading={loading}
         />
 
-        {/* Pagination Bar */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -399,8 +368,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
         />
       </div>
 
-      {/* Modales SPA */}
-      {/* 1. Modal Crear / Editar Proveedor */}
       <SupplierModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -412,7 +379,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
         isSaving={isSaving}
       />
 
-      {/* 2. Modal Ver Ficha de Proveedor */}
       <SupplierDetailModal
         isOpen={isDetailOpen}
         onClose={() => {
@@ -424,7 +390,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
         onScreen={handleOpenScreening}
       />
 
-      {/* 3. Modal Confirmar Eliminación */}
       <DeleteConfirmModal
         isOpen={Boolean(deletingSupplier)}
         onClose={() => setDeletingSupplier(null)}
@@ -433,7 +398,6 @@ export const Dashboard = ({ addToast, onSuppliersCountChange }) => {
         isDeleting={isDeleting}
       />
 
-      {/* 4. Modal de Cruce con Listas de Alto Riesgo (Screening SMV / SECOP / INTERPOL) */}
       <ScreeningModal
         isOpen={isScreeningOpen}
         onClose={() => {

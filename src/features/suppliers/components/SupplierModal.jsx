@@ -91,7 +91,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
 
   if (!isOpen) return null;
 
-  // Validación de campos individuales con mensajes amigables
   const validateField = (field, value) => {
     switch (field) {
       case 'legalName':
@@ -248,7 +247,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
       return;
     }
 
-    // Preparar payload para el backend .NET
     let formattedWebsite = formData.website.trim();
     if (!/^https?:\/\//i.test(formattedWebsite)) {
       formattedWebsite = `https://${formattedWebsite}`;
@@ -280,7 +278,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
     onSave(payload);
   };
 
-  // Preview de formato contabilidad en tiempo real
   const revenuePreview = formData.annualRevenue
     ? new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -314,12 +311,10 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="modal-body">
           <div className="form-section-title">Información Corporativa y Tributaria</div>
 
           <div className="form-grid-2">
-            {/* Razón Social */}
             <div className="form-group">
               <label htmlFor="legalName" className="form-label required">
                 Razón Social (Alfanumérico)
@@ -343,7 +338,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
               )}
             </div>
 
-            {/* Nombre Comercial */}
             <div className="form-group">
               <label htmlFor="tradeName" className="form-label required">
                 Nombre Comercial (Alfanumérico)
@@ -369,7 +363,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
           </div>
 
           <div className="form-grid-3">
-            {/* Identificación Tributaria (11 dígitos) */}
             <div className="form-group">
               <label htmlFor="taxId" className="form-label required">
                 Identificación Tributaria (11 dígitos)
@@ -424,7 +417,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
               )}
             </div>
 
-            {/* Correo Electrónico */}
             <div className="form-group">
               <label htmlFor="email" className="form-label required">
                 Correo Electrónico
@@ -478,7 +470,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
               )}
             </div>
 
-            {/* País (Desplegable) */}
             <div className="form-group">
               <label htmlFor="country" className="form-label required">
                 País (Desplegable)
@@ -505,7 +496,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
               )}
             </div>
 
-            {/* Facturación Anual en Dólares (Formato Contabilidad) */}
             <div className="form-group">
               <label htmlFor="annualRevenue" className="form-label required">
                 Facturación Anual ($ USD)
@@ -538,7 +528,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
             </div>
           </div>
 
-          {/* Dirección Física */}
           <div className="form-group">
             <label htmlFor="physicalAddress" className="form-label required">
               Dirección Física (Alfanumérico)
@@ -565,7 +554,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
             )}
           </div>
 
-          {/* Representantes Legales (Relevante para cruce en Interpol) */}
           <div className="form-divider"></div>
           <div className="representatives-section-header">
             <div>
@@ -666,7 +654,6 @@ export const SupplierModal = ({ isOpen, onClose, onSave, supplier = null, isSavi
             </div>
           ))}
 
-          {/* Footer */}
           <div className="modal-footer">
             <button
               type="button"

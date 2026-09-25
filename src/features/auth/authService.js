@@ -18,7 +18,24 @@ export const authService = {
     localStorage.removeItem('ey_compliance_user');
   },
 
+  isTokenExpired(token) {
+    if (!token) return true;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (!payload.exp) return false;
+      return payload.exp * 1000 <= Date.now();
+    } catch {
+      return true;
+    }
+  },
+
   getCurrentUser() {
+    const token = apiClient.getToken();
+    if (!token || this.isTokenExpired(token)) {
+      return null;
+    }
     try {
       const savedUser = localStorage.getItem('ey_compliance_user');
       return savedUser ? JSON.parse(savedUser) : null;
@@ -28,11 +45,17 @@ export const authService = {
   },
 
   getToken() {
-    return apiClient.getToken();
+    const token = apiClient.getToken();
+    if (!token) return null;
+    if (this.isTokenExpired(token)) {
+      this.logout();
+      return null;
+    }
+    return token;
   },
 
   isAuthenticated() {
-    return Boolean(apiClient.getToken());
+    return Boolean(this.getToken());
   },
 };
 
