@@ -28,7 +28,6 @@ src/
 │   │   ├── components/
 │   │   │   └── ScreeningModal.jsx # Modal de debida diligencia (pestañas Resumen, SMV, SECOP, INTERPOL)
 │   │   └── services/
-│   │       ├── interpolLiveService.js # Motor dinámico de consulta a INTERPOL en tiempo real
 │   │       └── screeningService.js    # Conexión al endpoint de screening del backend
 │   └── suppliers/
 │       ├── components/
